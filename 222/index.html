@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html>
+    <body>
+        
+        <style>
+            body {
+                background-color: black;
+                color: white;
+                font-family: myFirstFont;
+                margin-top:calc(100px + 20vh - 20vmin);
+                margin-left:100px;
+                /*
+                    To increase desktop, scale the first component.
+                    To increase mobile, scale the second component.
+                */
+                font-size:calc(
+                    5 * (1vw - 1vmin) +
+                    5 * (1vh - 1vmin)
+                );
+            }
+            
+            @font-face {
+                font-family: myFirstFont;
+                src: url(unifont-14.0.01.ttf)
+            }
+            .link { cursor: pointer;}
+            #footer {
+                position: fixed;
+                bottom: 0;
+                
+                color:#6A796C;
+                /*
+                To increase desktop, scale the first component.
+                To increase mobile, scale the second component.
+                */
+                font-size:calc(
+                    3 * (1vw - 1vmin) +
+                    5 * (1vh - 1vmin)
+                );
+                opacity: 0;
+                transition: opacity 1s; 
+            }
+            
+            #footer.fade {
+                opacity: 1;
+            }
+
+        </style>
+        
+        <p id="terminal">&block;</p>
+
+        <script>
+
+            // TOUCH
+            const textToHTMLReplacements = new Map();
+            const setSpeedEighty = '\u2B45';
+            textToHTMLReplacements.set(setSpeedEighty, '');
+            const blinkOneSecond = '\u2B46';
+            textToHTMLReplacements.set(blinkOneSecond, '');
+            const delayOneSecond = '\u2B47';
+            textToHTMLReplacements.set(delayOneSecond, '');
+            const delayHalfSecond = '\u2B48';
+            textToHTMLReplacements.set(delayHalfSecond, '');
+            const showFooter = '\u2B49';
+            textToHTMLReplacements.set(showFooter, '');
+
+            var goalText = `WHAT WAS THE LAST TIME YOU\nREALLY MET SOMEONE?${blinkOneSecond}${blinkOneSecond}${blinkOneSecond}${setSpeedEighty}\n\n\nABOUT\nCONTACT\nSIGN UP \u2192${showFooter}`;
+//          var goalText = `THIS MUST BE THE PLACE.${blinkOneSecond}${blinkOneSecond}${setSpeedEighty}\n\n\nABOUT\nCONTACT\nSIGN UP \u2192${showFooter}`;
+//          var goalText = `JOIN US FOR DINNER.${blinkOneSecond}${blinkOneSecond}${setSpeedEighty}\n\n\nABOUT\nCONTACT\nSIGN UP \u2192${showFooter}`;
+            var currentText = '';
+            const cursorText = "█";
+            var startDelay = 60;
+            var blinkDelay = 600;
+
+            textToHTMLReplacements.set('\u2192', '&rarr;');
+            textToHTMLReplacements.set('\n', '<br>');
+            textToHTMLReplacements.set('█', '&block;');
+
+            // Spaces are converted to non-breaking spaces; double-spaces are converted to normal spaces
+            textToHTMLReplacements.set('  ', '\u0BE7');
+            textToHTMLReplacements.set(' ', '&nbsp;');
+            textToHTMLReplacements.set('\u0BE7', ' ');
+
+
+            function onAboutClick() {
+                document.getElementById("footer").classList.toggle('fade', false);
+                shouldTearDown = true;
+                goalText = `${blinkOneSecond}THIS IS NOT MINDLESS SCROLLING.\n${delayOneSecond}THIS IS NOT RANDOM.\n${delayOneSecond}THIS IS NOT THE METAVERSE.\n${delayOneSecond}THIS IS NOT A DISTRACTION.${blinkOneSecond}\n\n222 IS AN OPPORTUNITY  TO CHOOSE CHANCE.${blinkOneSecond}\nNO PROFILES,  ${delayHalfSecond}NO DMS,  ${delayHalfSecond}NO SCROLLING,  ${delayHalfSecond}NO SWIPING.${blinkOneSecond}\n\nEXPERIENCES ARE ALWAYS IN PUBLIC  & IN A GROUP SETTING.\nEACH MEMBER IS VETTED  BEFORE BEING INVITED  TO AN EXPERIENCE.\n\nJUST SAY "YES"  &  EXPLORE THE CHANCE ENCOUNTERS  YOU\'D HAVE NEVER EXPERIENCED\n\n"YES" \u2192`;
+            }
+
+            textToHTMLReplacements.set('ABOUT', '<span class="link" onclick="onAboutClick()" id="about-button">ABOUT</span>');
+            textToHTMLReplacements.set('CONTACT', '<span class="link" onclick="window.open(\'mailto:hey@222.place\')" id="contact-button">CONTACT</span>');
+            textToHTMLReplacements.set('SIGN&nbsp;UP&nbsp;&rarr;', '<span class="link" onclick="location.href = \'https://twotwotwo.typeform.com/to/afPdJ7dX?utm_source=landing#?typeform-medium=embed-snippet\'" id="signup-button">SIGN UP &rarr;</span>');
+            textToHTMLReplacements.set('SIGN&nbsp;UP&nbsp;&block;', '<span class="link" onclick="location.href = \'https://twotwotwo.typeform.com/to/afPdJ7dX?utm_source=landing#?typeform-medium=embed-snippet\'" id="signup-button">SIGN UP &block;</span>');
+            textToHTMLReplacements.set('<br>"YES"&nbsp;&rarr;', '<span class="link" onclick="location.href = \'https://twotwotwo.typeform.com/to/afPdJ7dX?utm_source=landing#?typeform-medium=embed-snippet\'" id="signup-button"><br>"YES" &rarr;</span>');
+            textToHTMLReplacements.set('<br>"YES"&nbsp;&block;', '<span class="link" onclick="location.href = \'https://twotwotwo.typeform.com/to/afPdJ7dX?utm_source=landing#?typeform-medium=embed-snippet\'" id="signup-button"><br>"YES" &block;</span>');
+
+            let controlChars = new Set();
+            for (let key of textToHTMLReplacements.keys()) {
+                if (textToHTMLReplacements.get(key) === "") {
+                    controlChars.add(key);
+                }
+            }
+
+            // DO NOT TOUCH
+
+            var shouldDisplayCursor = true;
+            var shouldTearDown = false;
+            var shouldBlinkCursor = true;
+            var isStart = true;
+            var blinkUntil = new Date(1970, 1, 1);
+
+            const delay = ms => new Promise(r => setTimeout(r, ms));
+
+            var lastChar = (s) => s.slice(-1);
+            var allButLastChar = (s) => s.slice(0, -1);
+            
+            const manageTerminal = async () => {
+
+                function withCursor(s) {
+                    if (lastChar(s) == '\n') {
+                        return s + cursorText;
+                    }
+                    return allButLastChar(s) + cursorText;
+                };
+
+                function setDisplayText(s, wc) {
+                    var currentHTML = s;
+                    if (wc) {
+                        currentHTML = withCursor(s);
+                    }
+                    for (const [t, h] of textToHTMLReplacements) {
+                        currentHTML = currentHTML.replaceAll(t, h)
+                    }
+                    console.log(currentHTML);
+                    document.getElementById("terminal").innerHTML = currentHTML;
+                };
+
+                var i = 0;
+                var currentDelay = startDelay;
+                var currentDisplayText = '';
+                var blinkIsCursorOn = true;
+
+                while (true) {
+
+                    if (shouldTearDown) {
+                        i = 0;
+                        currentDisplayText = allButLastChar(currentDisplayText)
+                        if (currentDisplayText == '') {
+                            shouldTearDown = false;
+                            currentDelay = 80;
+                        }
+                        await delay(60);
+                        setDisplayText(currentDisplayText, false);
+                        continue;
+                    }
+
+                    instruction = goalText[i];
+                    i++;
+
+                    if (instruction == blinkOneSecond) {
+                        // blink cursor
+                        setDisplayText(currentDisplayText, false);
+                        await delay(blinkDelay);
+                        setDisplayText(currentDisplayText, true);
+                        await delay(blinkDelay);
+                    } else if (instruction == setSpeedEighty) {
+                        // set speed
+                        currentDelay = 100;
+                    } else if (instruction == delayOneSecond) {
+                        // set speed
+                        await delay(1000);
+                        continue;
+                    } else if (instruction == delayHalfSecond) {
+                        // set speed
+                        await delay(300);
+                        continue;
+                    } else if (instruction == showFooter) {
+                        // set speed
+                        document.getElementById("footer").classList.toggle('fade', true);
+                        continue
+                    } else if (instruction == undefined) {
+                        // blink cursor because there's nothing to do
+                        blinkIsCursorOn = !blinkIsCursorOn;
+                        if (blinkIsCursorOn) {
+                            setDisplayText(currentDisplayText, true);
+                        } else {
+                            setDisplayText(currentDisplayText, false);
+                        }
+                        await delay(blinkDelay);
+                        continue
+                    } else {
+                        // blink
+                        currentDisplayText += instruction;
+                        setDisplayText(currentDisplayText, true);
+                        if (goalText[i + 1] == blinkOneSecond) {
+//                          currentDelay = 0;
+                        };
+                    }
+
+                    console.log(currentDisplayText, currentDelay);
+                    await delay(currentDelay);
+
+                };
+            }
+
+            manageTerminal();
+
+        </script>
+    </body>
+    <p id="footer">
+        <span class="link" onclick="window.open('https://www.instagram.com/222place/')" id="instagram-button">INSTAGRAM</span> &nbsp; <span class="link" onclick="window.open('https://222.place/privacy/')" id="pp-button">PRIVACY&nbsp;POLICY</span> &nbsp; <span class="link" onclick="window.open('https://222.place/tos/')" id="tos-button">TERMS&nbsp;OF&nbsp;SERVICE</span>
+    </p>
+</html>
